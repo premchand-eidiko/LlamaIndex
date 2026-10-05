@@ -1,0 +1,26 @@
+EMPLOYEE HANDBOOK - ENTERPRISE POLICIES & GUIDELINES
+
+1. COMPANY OVERVIEW
+Welcome to our company! We are dedicated to building cutting-edge enterprise AI solutions while fostering an inclusive, collaborative, and innovative workplace where every team member can thrive.
+
+2. WORK FROM HOME & HYBRID WORK POLICY
+Employees may work remotely up to 3 days per week as part of our hybrid work model.
+Remote work arrangements must be coordinated with the employee's direct manager and registered with the HR department.
+High-speed internet stipends and home-office equipment allowances are provided upon onboarding.
+
+3. ANNUAL LEAVE & TIME OFF POLICY
+Full-time employees are entitled to 20 days of paid annual leave per calendar year.
+Annual leave should be requested via the HR portal at least two weeks in advance.
+Additional leave may be granted for medical reasons, family emergencies, bereavement, or special circumstances subject to manager approval.
+Employees are encouraged to take their leave to maintain health and work-life balance.
+
+4. EMPLOYEE BENEFITS
+We offer comprehensive benefits including:
+- Top-tier medical, dental, and vision insurance coverage from day one.
+- 401(k) retirement savings plan with 5% company matching.
+- Annual $2,500 learning and professional development stipend for conferences, books, and courses.
+- Wellness stipend covering gym memberships and fitness subscriptions.
+
+5. CODE OF CONDUCT & ETHICS
+All employees are expected to maintain the highest standards of professionalism, integrity, and mutual respect in all interactions with colleagues, customers, and partners.
+Discussions regarding security vulnerabilities, confidential client data, and proprietary models must strictly adhere to confidentiality agreements and security protocols.

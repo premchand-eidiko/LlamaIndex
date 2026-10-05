@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Enterprise RAG Assistant</title>
+
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
+</head>
+
+<body>
+
+    <div class="app">
+
+        <!-- ==========================================
+             SIDEBAR
+             ========================================== -->
+
+        <aside class="sidebar">
+
+            <div class="logo">
+
+                <div class="logo-icon">
+                    🧠
+                </div>
+
+                <div>
+                    <h2>RAG Assistant</h2>
+                    <span>Enterprise AI</span>
+                </div>
+
+            </div>
+
+
+            <button
+                class="new-chat-btn"
+                id="newChatBtn"
+                type="button"
+            >
+                + New Chat
+            </button>
+
+
+            <!-- Documents -->
+
+            <div class="sidebar-section">
+
+                <p class="section-title">
+                    Documents
+                </p>
+
+
+                <label
+                    for="fileInput"
+                    class="upload-btn"
+                >
+                    📤 Upload Document
+                </label>
+
+
+                <input
+                    type="file"
+                    id="fileInput"
+                    accept=".pdf,.txt,.md,.csv,.docx"
+                    hidden
+                >
+
+
+                <div
+                    id="uploadStatus"
+                    class="upload-status"
+                ></div>
+
+
+                <div
+                    id="documentList"
+                    class="document-list"
+                >
+
+                    <p class="empty-text">
+                        No documents uploaded
+                    </p>
+
+                </div>
+
+            </div>
+
+        </aside>
+
+
+        <!-- ==========================================
+             MAIN CHAT
+             ========================================== -->
+
+        <main class="chat-container">
+
+
+            <!-- Header -->
+
+            <header class="chat-header">
+
+                <div>
+
+                    <h1>
+                        Enterprise RAG Assistant
+                    </h1>
+
+                    <p>
+                        Ask questions about your uploaded documents
+                    </p>
+
+                </div>
+
+
+                <div class="status">
+
+                    <span class="status-dot"></span>
+
+                    Online
+
+                </div>
+
+            </header>
+
+
+            <!-- ======================================
+                 CHAT MESSAGES
+                 ====================================== -->
+
+            <section
+                id="chatMessages"
+                class="chat-messages"
+            >
+
+                <div class="welcome">
+
+                    <div class="welcome-icon">
+                        🧠
+                    </div>
+
+                    <h2>
+                        How can I help you?
+                    </h2>
+
+                    <p>
+                        Upload your company documents
+                        and ask questions about them.
+                    </p>
+
+                </div>
+
+            </section>
+
+
+            <!-- ======================================
+                 CHAT INPUT
+                 ====================================== -->
+
+            <div class="input-area">
+
+                <form id="chatForm">
+
+                    <textarea
+                        id="messageInput"
+                        placeholder="Ask something about your documents..."
+                        rows="1"
+                        required
+                    ></textarea>
+
+
+                    <button
+                        type="submit"
+                        id="sendButton"
+                    >
+                        ➤
+                    </button>
+
+                </form>
+
+
+                <p class="input-hint">
+                    AI responses are generated using your
+                    uploaded documents.
+                </p>
+
+            </div>
+
+        </main>
+
+    </div>
+
+
+    <script src="app.js"></script>
+
+</body>
+
+</html>
