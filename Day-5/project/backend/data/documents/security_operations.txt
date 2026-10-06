@@ -1,0 +1,22 @@
+SECURITY OPERATIONS & IT INFRASTRUCTURE MANUAL
+
+1. LEADERSHIP & ROLES
+Alice manages the Security Operations Team (SecOps) under the IT Operations department.
+Alice oversees cyber defense, incident response, vulnerability management, and infrastructure compliance.
+Bob serves as the Lead Security Architect, reporting directly to Alice.
+The SecOps on-call hotline and escalation email is secops-alert@enterprise.com.
+
+2. SECURITY ARCHITECTURE & POLICIES
+The company enforces a strict Zero Trust Architecture across all cloud and on-premises environments.
+Key policies implemented by the SecOps team include:
+- Mandatory Multi-Factor Authentication (MFA) for all identity access points.
+- Role-Based Access Control (RBAC) adhering to the principle of least privilege.
+- Continuous vulnerability scanning and weekly patch verification.
+- 24/7 security monitoring with automatic threat isolation.
+
+3. INCIDENT RESPONSE WORKFLOW
+In the event of a suspected security breach:
+Step 1: Isolate affected endpoints immediately from the internal network.
+Step 2: Notify Alice and the SecOps on-call lead within 15 minutes.
+Step 3: Preserve forensic logs and begin triage according to NIST 800-61 standards.
+Step 4: Conduct a post-incident review and deliver findings to senior management.

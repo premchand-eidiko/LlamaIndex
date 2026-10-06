@@ -147,6 +147,109 @@ body {
 
 
 /* ==================================================
+   CONVERSATIONS
+   ================================================== */
+
+.conversation-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+
+.conversation-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    width: 100%;
+    min-width: 0;
+    padding: 3px 4px;
+    border-radius: 8px;
+    background: transparent;
+    color: #374151;
+    font-size: 13px;
+    transition: background 0.2s ease;
+}
+
+
+.conversation-item:hover {
+    background: #f3f4f6;
+}
+
+
+.conversation-item.active {
+    background: #eef2ff;
+    color: #111827;
+    font-weight: 600;
+}
+
+
+.conversation-open {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
+    padding: 7px 4px;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+
+.conversation-actions {
+    display: flex;
+    gap: 2px;
+    flex-shrink: 0;
+}
+
+
+.sidebar-icon-btn {
+    display: inline-grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    flex: 0 0 28px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: #6b7280;
+    font-size: 15px;
+    cursor: pointer;
+}
+
+
+.sidebar-icon-btn:hover,
+.sidebar-icon-btn:focus-visible {
+    background: #e5e7eb;
+    color: #111827;
+}
+
+
+.sidebar-icon-btn.delete-action:hover,
+.sidebar-icon-btn.delete-action:focus-visible {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+
+.conversation-icon {
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+
+.conversation-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+
+/* ==================================================
    SIDEBAR SECTION
    ================================================== */
 
@@ -260,9 +363,9 @@ body {
 
     align-items: center;
 
-    gap: 10px;
+    gap: 8px;
 
-    padding: 10px 8px;
+    padding: 6px 4px;
 
     border-radius: 8px;
 
@@ -287,9 +390,12 @@ body {
 
 
 .document-name {
+    min-width: 0;
+    flex: 1;
     overflow: hidden;
 
     text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 

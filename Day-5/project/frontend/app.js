@@ -2,7 +2,18 @@
 // Configuration
 // ==================================================
 
-const API_BASE_URL = "http://127.0.0.1:8000";
+const API_BASE_URL =
+    "http://127.0.0.1:8000";
+
+
+// ==================================================
+// Session
+// ==================================================
+
+let sessionId =
+    createSessionId();
+
+let conversationListCache = [];
 
 
 // ==================================================
@@ -33,6 +44,9 @@ const uploadStatus =
 const documentList =
     document.getElementById("documentList");
 
+const chatList =
+    document.getElementById("chatList");
+
 
 // ==================================================
 // Allowed File Extensions
@@ -48,6 +62,15 @@ const ALLOWED_EXTENSIONS = [
 
 
 // ==================================================
+// Initial Load
+// ==================================================
+
+loadDocuments();
+loadConversations();
+renderWelcomeState();
+
+
+// ==================================================
 // CHAT
 // ==================================================
 
@@ -57,37 +80,34 @@ chatForm.addEventListener(
 
         event.preventDefault();
 
+
         const message =
             messageInput.value.trim();
 
+
         if (!message) {
+
             return;
         }
 
 
-        // Remove welcome screen
-
         removeWelcomeMessage();
 
 
-        // Display user message
+        addUserMessage(
+            message
+        );
 
-        addUserMessage(message);
-
-
-        // Clear input
 
         messageInput.value = "";
 
-        messageInput.style.height = "auto";
+        messageInput.style.height =
+            "auto";
 
 
-        // Disable send button
+        sendButton.disabled =
+            true;
 
-        sendButton.disabled = true;
-
-
-        // Show typing indicator
 
         const typingElement =
             addTypingIndicator();
@@ -107,7 +127,15 @@ chatForm.addEventListener(
                         },
 
                         body: JSON.stringify({
-                            message: message
+
+                            message:
+                                message,
+
+                            session_id:
+                                sessionId,
+
+                            file_name: null
+
                         })
                     }
                 );
@@ -116,8 +144,6 @@ chatForm.addEventListener(
             const data =
                 await response.json();
 
-
-            // Remove typing indicator
 
             typingElement.remove();
 
@@ -131,12 +157,15 @@ chatForm.addEventListener(
             }
 
 
-            // Display answer
-
             addAssistantMessage(
+
                 data.answer,
+
                 data.sources
             );
+
+            await loadConversations();
+
 
         } catch (error) {
 
@@ -147,14 +176,324 @@ chatForm.addEventListener(
                 `Error: ${error.message}`
             );
 
+
         } finally {
 
-            sendButton.disabled = false;
+            sendButton.disabled =
+                false;
 
             messageInput.focus();
         }
     }
 );
+
+
+// ==================================================
+// LOAD CONVERSATIONS
+// ==================================================
+
+async function loadConversations() {
+
+    try {
+
+        const response =
+            await fetch(
+                `${API_BASE_URL}/api/conversations`
+            );
+
+
+        const data =
+            await response.json();
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                data.detail ||
+                "Could not load conversations."
+            );
+        }
+
+
+        conversationListCache =
+            data.conversations || [];
+
+
+        renderConversationList(
+            conversationListCache
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            "Conversation loading error:",
+            error
+        );
+    }
+}
+
+async function renameConversation(conversation) {
+    const title = window.prompt(
+        "Rename chat",
+        conversation.title || "New Chat"
+    );
+    if (title === null || !title.trim()) return;
+
+    try {
+        const response = await fetch(
+            `${API_BASE_URL}/api/conversations/${conversation.id}`,
+            {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ title: title.trim() })
+            }
+        );
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.detail || "Could not rename chat.");
+        await loadConversations();
+    } catch (error) {
+        window.alert(error.message);
+    }
+}
+
+async function deleteConversation(conversation) {
+    const confirmed = window.confirm(
+        `Delete chat "${conversation.title || "New Chat"}" and its messages?`
+    );
+    if (!confirmed) return;
+
+    try {
+        const response = await fetch(
+            `${API_BASE_URL}/api/conversations/${conversation.id}`,
+            { method: "DELETE" }
+        );
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.detail || "Could not delete chat.");
+
+        if (sessionId === conversation.id) {
+            await createNewConversation();
+        } else {
+            await loadConversations();
+        }
+    } catch (error) {
+        window.alert(error.message);
+    }
+}
+
+
+// ==================================================
+// RENDER CONVERSATION LIST
+// ==================================================
+
+function renderConversationList(
+    conversations
+) {
+
+    chatList.innerHTML = "";
+
+
+    if (
+        !conversations ||
+        conversations.length === 0
+    ) {
+
+        chatList.innerHTML = `
+            <p class="empty-text">
+                No conversations yet
+            </p>
+        `;
+
+        return;
+    }
+
+
+    conversations.forEach(function (conversation) {
+        const item = document.createElement("div");
+        item.className = "conversation-item";
+
+
+        if (
+            conversation.id ===
+            sessionId
+        ) {
+
+            item.classList.add(
+                "active"
+            );
+        }
+
+
+        const openButton = document.createElement("button");
+        openButton.type = "button";
+        openButton.className = "conversation-open";
+        openButton.innerHTML = `
+            <span class="conversation-icon" aria-hidden="true">💬</span>
+            <span class="conversation-title">${escapeHtml(conversation.title || "New Chat")}</span>
+        `;
+        openButton.addEventListener("click", function () {
+            openConversation(conversation.id);
+        });
+
+        const actions = document.createElement("span");
+        actions.className = "conversation-actions";
+        actions.innerHTML = `
+            <button class="sidebar-icon-btn" type="button" title="Rename chat" aria-label="Rename chat">✎</button>
+            <button class="sidebar-icon-btn delete-action" type="button" title="Delete chat" aria-label="Delete chat">🗑️</button>
+        `;
+        const [renameButton, deleteButton] = actions.querySelectorAll("button");
+        renameButton.addEventListener("click", function () {
+            renameConversation(conversation);
+        });
+        deleteButton.addEventListener("click", function () {
+            deleteConversation(conversation);
+        });
+
+        item.append(openButton, actions);
+        chatList.appendChild(item);
+    });
+}
+
+
+// ==================================================
+// OPEN CONVERSATION
+// ==================================================
+
+async function openConversation(
+    chatId
+) {
+
+    try {
+
+        const response =
+            await fetch(
+                `${API_BASE_URL}/api/conversations/${chatId}`
+            );
+
+
+        const data =
+            await response.json();
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                data.detail ||
+                "Conversation not found."
+            );
+        }
+
+
+        sessionId = chatId;
+
+        renderConversationMessages(
+            data.messages || []
+        );
+
+        await loadConversations();
+
+
+    } catch (error) {
+
+        console.error(
+            "Could not open conversation:",
+            error
+        );
+    }
+}
+
+
+// ==================================================
+// RENDER CONVERSATION MESSAGES
+// ==================================================
+
+function renderConversationMessages(
+    messages
+) {
+
+    chatMessages.innerHTML = "";
+
+
+    if (
+        !messages ||
+        messages.length === 0
+    ) {
+
+        renderWelcomeState();
+
+        return;
+    }
+
+
+    messages.forEach(
+        function (message) {
+
+            if (
+                message.role ===
+                "user"
+            ) {
+
+                addUserMessage(
+                    message.content
+                );
+
+            } else {
+
+                addAssistantMessage(
+                    message.content,
+                    message.sources || []
+                );
+            }
+        }
+    );
+}
+
+
+// ==================================================
+// CREATE NEW CONVERSATION
+// ==================================================
+
+async function createNewConversation() {
+
+    try {
+
+        const response =
+            await fetch(
+                `${API_BASE_URL}/api/conversations`,
+                {
+                    method: "POST"
+                }
+            );
+
+
+        const data =
+            await response.json();
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                data.detail ||
+                "Could not create a new conversation."
+            );
+        }
+
+
+        sessionId = data.chat_id;
+
+        renderWelcomeState();
+
+        await loadConversations();
+
+
+    } catch (error) {
+
+        console.error(
+            "Could not create conversation:",
+            error
+        );
+    }
+}
 
 
 // ==================================================
@@ -170,14 +509,15 @@ fileInput.addEventListener(
 
 
         if (!file) {
+
             return;
         }
 
 
-        // Check extension
-
         const extension =
-            getFileExtension(file.name);
+            getFileExtension(
+                file.name
+            );
 
 
         if (
@@ -191,13 +531,12 @@ fileInput.addEventListener(
                 "error"
             );
 
+
             fileInput.value = "";
 
             return;
         }
 
-
-        // Show loading status
 
         showUploadStatus(
             `Uploading ${file.name}...`,
@@ -241,19 +580,13 @@ fileInput.addEventListener(
             }
 
 
-            // Upload succeeded
-
             showUploadStatus(
                 "Document uploaded and indexed successfully.",
                 "success"
             );
 
 
-            // Add document to sidebar
-
-            addDocument(
-                data.file_name
-            );
+            await loadDocuments();
 
 
         } catch (error) {
@@ -263,9 +596,8 @@ fileInput.addEventListener(
                 "error"
             );
 
-        } finally {
 
-            // Allow selecting the same file again
+        } finally {
 
             fileInput.value = "";
         }
@@ -274,31 +606,119 @@ fileInput.addEventListener(
 
 
 // ==================================================
+// Load Documents
+// ==================================================
+
+async function loadDocuments() {
+
+    try {
+
+        const response =
+            await fetch(
+                `${API_BASE_URL}/api/documents`
+            );
+
+
+        const data =
+            await response.json();
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                data.detail ||
+                "Could not load documents."
+            );
+        }
+
+
+        renderDocuments(
+            data.documents
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            "Document loading error:",
+            error
+        );
+    }
+}
+
+
+// ==================================================
+// Render Documents
+// ==================================================
+
+function renderDocuments(documents) {
+    documentList.innerHTML = "";
+
+    if (!documents || documents.length === 0) {
+        documentList.innerHTML = `
+            <p class="empty-text">No documents uploaded</p>
+        `;
+        return;
+    }
+
+    documents.forEach(function (documentInfo) {
+        addDocument(documentInfo);
+    });
+}
+
+
+function addDocument(documentInfo) {
+    const documentElement = document.createElement("div");
+    documentElement.className = "document-item";
+    documentElement.innerHTML = `
+        <span class="document-icon" aria-hidden="true">📄</span>
+        <span class="document-name" title="${escapeHtml(documentInfo.path)}">${escapeHtml(documentInfo.path)}</span>
+        <button class="sidebar-icon-btn delete-action" type="button" title="Delete document" aria-label="Delete ${escapeHtml(documentInfo.file_name)}">🗑️</button>
+    `;
+    documentElement.querySelector("button").addEventListener("click", function () {
+        deleteDocument(documentInfo);
+    });
+    documentList.appendChild(documentElement);
+}
+
+
+async function deleteDocument(documentInfo) {
+    const confirmed = window.confirm(
+        `Permanently delete ${documentInfo.path} and rebuild the document index?`
+    );
+    if (!confirmed) return;
+
+    showUploadStatus(`Deleting ${documentInfo.file_name}...`, "loading");
+    try {
+        const response = await fetch(
+            `${API_BASE_URL}/api/documents?path=${encodeURIComponent(documentInfo.path)}`,
+            { method: "DELETE" }
+        );
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.detail || "Could not delete document.");
+
+        showUploadStatus(
+            `${documentInfo.file_name} and its indexed content were deleted.`,
+            "success"
+        );
+        await loadDocuments();
+    } catch (error) {
+        showUploadStatus(`Delete failed: ${error.message}`, "error");
+    }
+}
+
+
+// ==================================================
 // Add User Message
 // ==================================================
 
 function addUserMessage(message) {
-
-    const messageElement =
-        document.createElement("div");
-
-
-    messageElement.className =
-        "message user";
-
-
+    const messageElement = document.createElement("div");
+    messageElement.className = "message user";
     messageElement.innerHTML = `
-        <div class="message-content">
-            ${escapeHtml(message)}
-        </div>
+        <div class="message-content">${escapeHtml(message)}</div>
     `;
-
-
-    chatMessages.appendChild(
-        messageElement
-    );
-
-
+    chatMessages.appendChild(messageElement);
     scrollToBottom();
 }
 
@@ -307,103 +727,35 @@ function addUserMessage(message) {
 // Add Assistant Message
 // ==================================================
 
-function addAssistantMessage(
-    answer,
-    sources = []
-) {
-
-    const messageElement =
-        document.createElement("div");
-
-
-    messageElement.className =
-        "message assistant";
-
-
+function addAssistantMessage(answer, sources = []) {
+    const messageElement = document.createElement("div");
+    messageElement.className = "message assistant";
     messageElement.innerHTML = `
-        <div class="message-content">
-            ${escapeHtml(answer)}
-        </div>
+        <div class="message-content">${escapeHtml(answer)}</div>
     `;
+    chatMessages.appendChild(messageElement);
 
+    if (sources && sources.length > 0) {
+        const sourcesElement = document.createElement("div");
+        sourcesElement.className = "sources";
 
-    chatMessages.appendChild(
-        messageElement
-    );
+        const title = document.createElement("div");
+        title.className = "sources-title";
+        title.textContent = "Retrieved Sources";
+        sourcesElement.appendChild(title);
 
+        sources.forEach(function (source) {
+            const sourceElement = document.createElement("div");
+            sourceElement.className = "source";
+            sourceElement.innerHTML = `
+                <div class="source-file">📄 ${escapeHtml(source.file_name)}</div>
+                <div class="source-text">${escapeHtml(source.text)}</div>
+            `;
+            sourcesElement.appendChild(sourceElement);
+        });
 
-    // ----------------------------------------------
-    // Sources
-    // ----------------------------------------------
-
-    if (
-        sources &&
-        sources.length > 0
-    ) {
-
-        const sourcesElement =
-            document.createElement("div");
-
-
-        sourcesElement.className =
-            "sources";
-
-
-        const title =
-            document.createElement("div");
-
-
-        title.className =
-            "sources-title";
-
-
-        title.textContent =
-            "Retrieved Sources";
-
-
-        sourcesElement.appendChild(
-            title
-        );
-
-
-        sources.forEach(
-            function (source) {
-
-                const sourceElement =
-                    document.createElement("div");
-
-
-                sourceElement.className =
-                    "source";
-
-
-                sourceElement.innerHTML = `
-                    <div class="source-file">
-                        📄 ${escapeHtml(
-                            source.file_name
-                        )}
-                    </div>
-
-                    <div class="source-text">
-                        ${escapeHtml(
-                            source.text
-                        )}
-                    </div>
-                `;
-
-
-                sourcesElement.appendChild(
-                    sourceElement
-                );
-            }
-        );
-
-
-        chatMessages.appendChild(
-            sourcesElement
-        );
+        chatMessages.appendChild(sourcesElement);
     }
-
 
     scrollToBottom();
 }
@@ -416,7 +768,9 @@ function addAssistantMessage(
 function addTypingIndicator() {
 
     const messageElement =
-        document.createElement("div");
+        document.createElement(
+            "div"
+        );
 
 
     messageElement.className =
@@ -453,74 +807,6 @@ function addTypingIndicator() {
 
 
 // ==================================================
-// Add Document To Sidebar
-// ==================================================
-
-function addDocument(fileName) {
-
-    // Remove empty message
-
-    const emptyText =
-        document.querySelector(
-            ".document-list .empty-text"
-        );
-
-
-    if (emptyText) {
-        emptyText.remove();
-    }
-
-
-    // Prevent duplicate display
-
-    const existingDocuments =
-        document.querySelectorAll(
-            ".document-name"
-        );
-
-
-    for (
-        const documentElement
-        of existingDocuments
-    ) {
-
-        if (
-            documentElement.textContent ===
-            fileName
-        ) {
-            return;
-        }
-    }
-
-
-    // Create document item
-
-    const documentElement =
-        document.createElement("div");
-
-
-    documentElement.className =
-        "document-item";
-
-
-    documentElement.innerHTML = `
-        <span class="document-icon">
-            📄
-        </span>
-
-        <span class="document-name">
-            ${escapeHtml(fileName)}
-        </span>
-    `;
-
-
-    documentList.appendChild(
-        documentElement
-    );
-}
-
-
-// ==================================================
 // Upload Status
 // ==================================================
 
@@ -539,16 +825,19 @@ function showUploadStatus(
 
 
 // ==================================================
-// Get File Extension
+// File Extension
 // ==================================================
 
-function getFileExtension(fileName) {
+function getFileExtension(
+    fileName
+) {
 
     const lastDot =
         fileName.lastIndexOf(".");
 
 
     if (lastDot === -1) {
+
         return "";
     }
 
@@ -560,16 +849,46 @@ function getFileExtension(fileName) {
 
 
 // ==================================================
-// Remove Welcome Screen
+// Welcome
 // ==================================================
+
+function renderWelcomeState() {
+
+    chatMessages.innerHTML = `
+        <div class="welcome">
+
+            <div class="welcome-icon">
+                🧠
+            </div>
+
+            <h2>
+                How can I help you?
+            </h2>
+
+            <p>
+                Upload your company documents
+                and ask questions about them.
+            </p>
+
+        </div>
+    `;
+
+    messageInput.value = "";
+    messageInput.style.height = "auto";
+    messageInput.focus();
+}
+
 
 function removeWelcomeMessage() {
 
     const welcome =
-        document.querySelector(".welcome");
+        document.querySelector(
+            ".welcome"
+        );
 
 
     if (welcome) {
+
         welcome.remove();
     }
 }
@@ -581,41 +900,15 @@ function removeWelcomeMessage() {
 
 newChatBtn.addEventListener(
     "click",
-    function () {
+    async function () {
 
-        chatMessages.innerHTML = `
-            <div class="welcome">
-
-                <div class="welcome-icon">
-                    🧠
-                </div>
-
-                <h2>
-                    How can I help you?
-                </h2>
-
-                <p>
-                    Upload your company documents
-                    and ask questions about them.
-                </p>
-
-            </div>
-        `;
-
-
-        messageInput.value = "";
-
-        messageInput.style.height =
-            "auto";
-
-
-        messageInput.focus();
+        await createNewConversation();
     }
 );
 
 
 // ==================================================
-// Auto Resize Textarea
+// Auto Resize
 // ==================================================
 
 messageInput.addEventListener(
@@ -657,7 +950,7 @@ messageInput.addEventListener(
 
 
 // ==================================================
-// Scroll Chat To Bottom
+// Scroll
 // ==================================================
 
 function scrollToBottom() {
@@ -668,13 +961,42 @@ function scrollToBottom() {
 
 
 // ==================================================
+// Session ID
+// ==================================================
+
+function createSessionId() {
+
+    if (
+        typeof crypto !==
+        "undefined" &&
+        crypto.randomUUID
+    ) {
+
+        return crypto.randomUUID();
+    }
+
+
+    return (
+        Date.now().toString(36) +
+        Math.random()
+            .toString(36)
+            .substring(2)
+    );
+}
+
+
+// ==================================================
 // HTML Safety
 // ==================================================
 
-function escapeHtml(value) {
+function escapeHtml(
+    value
+) {
 
     const div =
-        document.createElement("div");
+        document.createElement(
+            "div"
+        );
 
 
     div.textContent =

@@ -7,7 +7,10 @@ pydantic
 llama-index
 llama-index-llms-groq
 llama-index-embeddings-huggingface
+llama-index-retrievers-bm25
 
 pypdf
 docx2txt
 pandas
+rank-bm25
+sentence-transformers

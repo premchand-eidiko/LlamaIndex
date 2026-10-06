@@ -5,10 +5,28 @@ from dotenv import load_dotenv
 
 
 # ==================================================
-# Base Directories
+# PROJECT DIRECTORY STRUCTURE
+# ==================================================
+#
+# backend/
+#     app/
+#     data/
+#         documents/
+#         storage/
+#         chat_history.db
+#
+# BASE_DIR points to:
+#
+# /home/bandaru/prem/LlamaIndex/Day-5/project/backend
+#
 # ==================================================
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+
+# ==================================================
+# DATA DIRECTORIES
+# ==================================================
 
 DATA_DIR = BASE_DIR / "data"
 
@@ -16,9 +34,11 @@ DOCUMENTS_DIR = DATA_DIR / "documents"
 
 STORAGE_DIR = DATA_DIR / "storage"
 
+CHAT_DATABASE = DATA_DIR / "chat_history.db"
+
 
 # ==================================================
-# Environment
+# ENVIRONMENT VARIABLES
 # ==================================================
 
 ENV_FILE = BASE_DIR / ".env"
@@ -27,13 +47,10 @@ load_dotenv(ENV_FILE)
 
 
 # ==================================================
-# Groq
+# GROQ CONFIGURATION
 # ==================================================
 
-GROQ_API_KEY = os.getenv(
-    "GROQ_API_KEY"
-)
-
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 LLM_MODEL = os.getenv(
     "LLM_MODEL",
@@ -42,7 +59,7 @@ LLM_MODEL = os.getenv(
 
 
 # ==================================================
-# Embedding Model
+# EMBEDDING MODEL
 # ==================================================
 
 EMBEDDING_MODEL = os.getenv(
@@ -52,7 +69,17 @@ EMBEDDING_MODEL = os.getenv(
 
 
 # ==================================================
-# RAG Configuration
+# RERANKER MODEL
+# ==================================================
+
+RERANKER_MODEL = os.getenv(
+    "RERANKER_MODEL",
+    "BAAI/bge-reranker-base",
+)
+
+
+# ==================================================
+# CHUNKING
 # ==================================================
 
 CHUNK_SIZE = int(
@@ -62,7 +89,6 @@ CHUNK_SIZE = int(
     )
 )
 
-
 CHUNK_OVERLAP = int(
     os.getenv(
         "CHUNK_OVERLAP",
@@ -71,6 +97,10 @@ CHUNK_OVERLAP = int(
 )
 
 
+# ==================================================
+# RETRIEVAL
+# ==================================================
+
 SIMILARITY_TOP_K = int(
     os.getenv(
         "SIMILARITY_TOP_K",
@@ -78,9 +108,23 @@ SIMILARITY_TOP_K = int(
     )
 )
 
+HYBRID_TOP_K = int(
+    os.getenv(
+        "HYBRID_TOP_K",
+        "10",
+    )
+)
+
+RERANK_TOP_N = int(
+    os.getenv(
+        "RERANK_TOP_N",
+        "5",
+    )
+)
+
 
 # ==================================================
-# Create Required Directories
+# CREATE REQUIRED DIRECTORIES
 # ==================================================
 
 DOCUMENTS_DIR.mkdir(
@@ -88,15 +132,19 @@ DOCUMENTS_DIR.mkdir(
     exist_ok=True,
 )
 
-
 STORAGE_DIR.mkdir(
+    parents=True,
+    exist_ok=True,
+)
+
+DATA_DIR.mkdir(
     parents=True,
     exist_ok=True,
 )
 
 
 # ==================================================
-# Validate Groq API Key
+# VALIDATE REQUIRED SETTINGS
 # ==================================================
 
 if not GROQ_API_KEY:
